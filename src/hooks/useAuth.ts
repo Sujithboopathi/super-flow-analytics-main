@@ -4,28 +4,47 @@ import type { User, Session } from "@supabase/supabase-js";
 
 export type AppRole = "admin" | "employee" | "customer";
 
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: AppRole;
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<AppRole | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string) => {
+  const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
+        .from("profiles")
+        .select("id, full_name, email, phone, role")
+        .eq("id", userId)
         .maybeSingle();
       
       if (error) {
-        console.warn("Error fetching role:", error.message);
-        return "customer";
+        console.warn("Error fetching profile:", error.message);
+        return null;
       }
-      return (data?.role as AppRole) ?? "customer";
+      
+      if (data) {
+        const profileData = data as any;
+        return {
+          id: profileData.id,
+          full_name: profileData.full_name,
+          email: profileData.email,
+          phone: profileData.phone || null,
+          role: (profileData.role as AppRole) || "customer"
+        };
+      }
+      return null;
     } catch (err) {
-      console.warn("Unexpected error fetching role:", err);
-      return "customer";
+      console.warn("Unexpected error fetching profile:", err);
+      return null;
     }
   };
 
@@ -35,13 +54,11 @@ export function useAuth() {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(async () => {
-            const userRole = await fetchRole(session.user.id);
-            setRole(userRole);
-            setLoading(false);
-          }, 0);
+          const userProfile = await fetchProfile(session.user.id);
+          setProfile(userProfile);
+          setLoading(false);
         } else {
-          setRole(null);
+          setProfile(null);
           setLoading(false);
         }
       }
@@ -51,8 +68,8 @@ export function useAuth() {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchRole(session.user.id).then((userRole) => {
-          setRole(userRole);
+        fetchProfile(session.user.id).then((userProfile) => {
+          setProfile(userProfile);
           setLoading(false);
         });
       } else {
@@ -81,5 +98,5 @@ export function useAuth() {
     await supabase.auth.signOut();
   };
 
-  return { user, session, role, loading, signIn, signUp, signOut };
+  return { user, session, profile, role: profile?.role ?? null, loading, signIn, signUp, signOut };
 }

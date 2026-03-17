@@ -15,14 +15,14 @@ interface CartItem {
 
 export default function CustomerCatalog() {
   const { data: products = [] } = useActiveProducts();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const createOrder = useCreateOrder();
   const { data: myOrders = [] } = useCustomerOrders(user?.id);
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerName, setCustomerName] = useState(user?.user_metadata?.full_name || "");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState(profile?.full_name || "");
+  const [customerPhone, setCustomerPhone] = useState(profile?.phone || "");
   const [showCart, setShowCart] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState<string | null>(null);
   const [showOrders, setShowOrders] = useState(false);
@@ -193,7 +193,7 @@ export default function CustomerCatalog() {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight">SmartBill</h1>
-              <p className="text-[10px] text-muted-foreground">Welcome, {user?.user_metadata?.full_name || "Customer"}</p>
+              <p className="text-[10px] text-muted-foreground">Welcome, {profile?.full_name || "Customer"}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -17,22 +17,37 @@ export default function LoginPage({ onSignIn, onSignUp }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Normalize email to lowercase
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log(`Auth Attempt: ${isSignUp ? 'SignUp' : 'SignIn'} for email: [${normalizedEmail}]`);
+    
     try {
       if (isSignUp) {
-        await onSignUp(email, password, fullName, signupMode === "customer");
-        toast.success("Account created! Please verify your email to sign in.");
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+        toast.info(`Creating account for: ${normalizedEmail}`);
+        await onSignUp(normalizedEmail, password, fullName, signupMode === "customer");
+        toast.success("Account created successfully!");
+        // Clear password for safety after account creation
+        setPassword("");
+        setConfirmPassword("");
         setIsSignUp(false);
       } else {
-        await onSignIn(email, password);
+        toast.info(`Signing in as: ${normalizedEmail}`);
+        await onSignIn(normalizedEmail, password);
         toast.success("Welcome back!");
       }
     } catch (err: any) {
+      console.error("Auth Error:", err);
       toast.error(err.message || "Authentication failed");
     } finally {
       setLoading(false);
@@ -149,6 +164,19 @@ export default function LoginPage({ onSignIn, onSignUp }: LoginPageProps) {
                   </button>
                 </div>
               </div>
+
+              {isSignUp && (
+                <div className="space-y-1.5 animate-in fade-in duration-300">
+                  <Label className="text-xs font-medium">Confirm Password</Label>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    required
+                  />
+                </div>
+              )}
 
               <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                 {loading ? (
