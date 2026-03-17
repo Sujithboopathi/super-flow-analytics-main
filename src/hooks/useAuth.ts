@@ -11,12 +11,22 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .single();
-    return (data?.role as AppRole) ?? "customer";
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.warn("Error fetching role:", error.message);
+        return "customer";
+      }
+      return (data?.role as AppRole) ?? "customer";
+    } catch (err) {
+      console.warn("Unexpected error fetching role:", err);
+      return "customer";
+    }
   };
 
   useEffect(() => {
